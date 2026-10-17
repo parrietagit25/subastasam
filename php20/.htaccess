@@ -1,0 +1,14 @@
+Options -Indexes
+
+<FilesMatch "(?i)(^\.|\.(sql|key|pem|crt|p7b|ca-bundle|env|bak|save(\.\d+)?|log|lock|ini|sh)$|^composer\.json$)">
+    Require all denied
+</FilesMatch>
+
+<If "%{REQUEST_URI} =~ m#/(vendor|config|includes|certificado)/#i">
+    Require all denied
+</If>
+
+# Las carpetas de documentos solo entregan los formatos que acepta config/uploads.php; nada ejecutable.
+<If "%{REQUEST_URI} =~ m#/subasta/(recibo_pn|ficha_pn|cc_pn|cedula_pn|recibo_pni|cedula_pni|aviso_pni|referencia_pni|cc_pni|actividad_economica_pni|registro_publico_pj|aviso_op_pj|cedula_pj|servicios_pj|cc_pj|carta_ex_pj|adjuntos_users_cc)/#i && ! (%{REQUEST_URI} =~ m#\.(pdf|jpe?g|jfif|png|gif|bmp|webp|tiff?|heic|docx?|xlsx?|xlsm)$#i)">
+    Require all denied
+</If>

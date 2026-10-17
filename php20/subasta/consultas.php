@@ -1,0 +1,276 @@
+<?php 
+
+try {
+    require_once __DIR__ . '/config/db.php';
+    $pdo = db_connect();
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    echo "Error de conexión: " . $e->getMessage();
+}
+
+$ultimo_id = $pdo -> query("SELECT * FROM cc_subastas WHERE id ='".$_GET['id']."'");
+$rows = $ultimo_id->fetchAll(PDO::FETCH_ASSOC);
+
+
+if (isset($_GET['editar_usuario'])) {
+
+    $ultimo_id = $pdo -> query("SELECT * FROM usuarios WHERE id ='".$_GET['id']."'");
+    $rows = $ultimo_id->fetchAll(PDO::FETCH_ASSOC);
+
+
+    foreach ($rows as $row) { ?>
+
+                <div class="modal-body">
+                  <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
+                  <div class="mb-3">
+                    <label for="nombre" class="form-label">Nombre</label>
+                    <input type="text" class="form-control" id="nombre" name="nombre" value="<?php echo $row['nombre']; ?>" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" name="email" value="<?php echo $row['email']; ?>" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="edad" class="form-label">Edad</label>
+                    <input type="number" class="form-control" id="edad" name="edad" value="<?php echo $row['edad']; ?>">
+                  </div>
+                  <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" name="password">
+                  </div>
+                  <div class="mb-3">
+                    <label for="tipo_user" class="form-label">Tipo de Usuario</label>
+                    <select class="form-control" id="tipo_user" name="tipo_user">
+                      <option value="admin" <?php echo $row['tipo_user'] == 'admin' ? 'selected' : ''; ?>>Admin</option>
+                      <option value="vendedor" <?php echo $row['tipo_user'] == 'vendedor' ? 'selected' : ''; ?>>Vendedor</option>
+                      <option value="supervisor" <?php echo $row['tipo_user'] == 'supervisor' ? 'selected' : ''; ?>>Supervisor</option>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label for="stat" class="form-label">Estado</label>
+                    <select class="form-control" id="stat" name="stat">
+                      <option value="1" <?php echo $row['stat'] == 1 ? 'selected' : ''; ?>>Activo</option>
+                      <option value="2" <?php echo $row['stat'] == 2 ? 'selected' : ''; ?>>Inactivo</option>
+                      <option value="3" <?php echo $row['stat'] == 3 ? 'selected' : ''; ?>>Eliminado</option>
+                    </select>
+                  </div>
+                </div>
+
+    <?php }
+
+    echo '<input type="hidden" value="'.$_GET['id'].'" name="id_aprobar">';
+
+}
+
+
+if (isset($_GET['aprobar'])) {
+
+
+    foreach ($rows as $row) {
+
+        echo ' Desea aprobar a <b>'.$row['nombre_completo'].'</b> Se le enviara un correo a con el codigo de aprobacion.<br>
+                <h3 style="color:red;">ANTES DE APROBAR, VERIFIQUE LOS DOCUMENTOS ADJUNTOS</h3>
+                <b style="color:red;">Verifique si todos los documentos adjuntos se pueden visualizar. Si no es el caso, 
+                por favor contacte al cliente y solicítele que vuelva a subir los documentos solicitados.</b>
+        ';
+
+    }
+
+    echo '<input type="hidden" value="'.$_GET['id'].'" name="id_aprobar">';
+
+}
+
+if (isset($_GET['enviar_email'])) {
+
+    foreach ($rows as $row) {
+
+        echo ' Desea Enviar un correo a <b>'.$row['nombre_completo'].'</b>.<br>
+             <textarea name="mensaje_send_email" id="" cols="30" rows="10" class="form-control"></textarea>
+        ';
+
+    }
+
+    echo '<input type="hidden" value="'.$_GET['id'].'" name="id_aprobar_send_email">';
+    echo '<input type="hidden" value="'.$row['email'].'" name="email_send_email">';
+
+}
+
+if (isset($_GET['adjuntos'])) {
+
+    foreach ($rows as $row) {
+
+        if ($row['tipo_persona'] == 'NATURAL') {
+
+            if (!empty($row['pn_recibo_servicios'])) {
+                echo '<a href="'.$row['pn_recibo_servicios'].'" target="_blank">Recibo / Servicio</a><br>';
+            }else {
+                echo '<span style="color:red;"> El archivo recibo no se ha subido correctamente, por favor contactar con el cliente </span> <br>';
+            }
+
+            if (!empty($row['pn_ficha'])) {
+                echo '<a href="'.$row['pn_ficha'].'" target="_blank">Ficha</a><br>';
+            }else {
+                echo '<span style="color:red;"> El archivo ficha no se ha subido correctamente, por favor contactar con el cliente </span> <br>';
+            }
+
+            // echo '<a href="'.$row['pn_carta_ex'].'" target="_blank">Carta</a><br>';
+
+            if (!empty($row['pn_cc'])) {
+                echo '<a href="'.$row['pn_cc'].'" target="_blank">conozca a su cliente</a><br>';
+            }else {
+                echo '<span style="color:red;"> El archivo conozca a su cliente no se ha subido  correctamente, por favor contactar con el cliente </span> <br>';
+            }
+
+            if (!empty($row['pn_cedula'])) {
+                echo '<a href="'.$row['pn_cedula'].'" target="_blank">Cedula o Pasaporte</a><br>';
+            }else {
+                echo '<span style="color:red;"> El archivo Cedula o Pasaporte no se ha subido  correctamente, por favor contactar con el cliente </span> <br>';
+            }
+        }
+
+        if ($row['tipo_persona'] == 'NATURAL INDEPENDIENTE') {
+
+            if (!empty($row['pni_cedula'])) {
+                echo '<a href="'.$row['pni_cedula'].'" target="_blank">Cédula / Pasaporte</a><br>';
+            }else {
+                echo '<span style="color:red;"> El Archivo cedula no se ha subido correctamente, por favor contactar con el cliente </span> <br>';
+            }
+
+            if (!empty($row['pni_aviso_op'])) {
+                echo '<a href="'.$row['pni_aviso_op'].'" target="_blank">Aviso de Operaciones</a><br>';
+            }else {
+                echo '<span style="color:red;"> El archivo aviso de operaciones no se ha subido correctamente, por favor contactar con el cliente </span> <br>';
+            }
+
+            if (!empty($row['pni_servicios'])) {
+                echo '<a href="'.$row['pni_servicios'].'" target="_blank">Servicios</a><br>';
+            }else {
+                echo '<span style="color:red;"> El archivo de servicios no se ha subido correctamente, por favor contactar con el cliente </span> <br>';
+            }
+
+            if (!empty($row['pni_referencia'])) {
+                echo '<a href="'.$row['pni_referencia'].'" target="_blank">Referencia</a><br>';
+            }else {
+                echo '<span style="color:red;"> El archivo Referencia no se ha subido correctamente, por favor contactar con el cliente </span> <br>';
+            }
+
+            if (!empty($row['pni_cc'])) {
+                echo '<a href="'.$row['pni_cc'].'" target="_blank">conozca a su cliente</a><br>';
+            }else {
+                echo '<span style="color:red;"> El archivo conozca a su cliente no se ha subido correctamente, por favor contactar con el cliente </span> <br>';
+            }
+
+            //echo '<a href="'.$row['pni_carta_ex'].'" target="_blank">Carta</a><br>';
+
+        }
+
+        if ($row['tipo_persona'] == 'JURIDICA') {
+
+            if (!empty($row['pj_registro_publico'])) {
+                echo '<a href="'.$row['pj_registro_publico'].'" target="_blank">Registro Público</a><br>';
+            }else {
+                echo '<span style="color:red;"> El archivo Registro Público no se ha subido correctamente, por favor contactar con el cliente </span> <br>';
+            }
+
+            if (!empty($row['pj_aviso_ope'])) {
+                echo '<a href="'.$row['pj_aviso_ope'].'" target="_blank">Aviso de Operaciones</a><br>';
+            }else {
+                echo '<span style="color:red;"> El archivo aviso de operaciones no se ha subido correctamente, por favor contactar con el cliente </span> <br>';
+            }
+
+            if (!empty($row['pj_cedula_pass'])) {
+                echo '<a href="'.$row['pj_cedula_pass'].'" target="_blank">Cédula / Pasaporte</a><br>';
+            }else {
+                echo '<span style="color:red;"> El archivo Cédula / Pasaporte no se ha subido correctamente, por favor contactar con el cliente </span> <br>';
+            }
+
+            if (!empty($row['pj_servicios'])) {
+                echo '<a href="'.$row['pj_servicios'].'" target="_blank">Servicios</a><br>';
+            }else {
+                echo '<span style="color:red;"> El archivo Servicios no se ha subido correctamente, por favor contactar con el cliente </span> <br>';
+            }
+
+            if (!empty($row['pj_cc'])) {
+                echo '<a href="'.$row['pj_cc'].'" target="_blank">conozca a su cliente</a><br>';
+            }else {
+                echo '<span style="color:red;"> El archivo conozca a su cliente no se ha subido correctamente, por favor contactar con el cliente </span> <br>';
+            }
+
+            //echo '<a href="'.$row['pj_carta_exo'].'" target="_blank">Carta</a><br>';
+
+        }
+
+    }
+
+}
+
+
+if (isset($_GET['eliminar'])) {
+
+
+    foreach ($rows as $row) {
+
+        echo '<p style="color:red;"> Desea Eliminar el regsitros de <b>'.$row['nombre_completo'].'<p>.';
+
+    }
+
+    echo '<input type="hidden" value="'.$_GET['id'].'" name="id_eliminar">';
+
+}
+
+if (isset($_GET['eliminar_usuario'])) {
+
+    $ultimo_id = $pdo -> query("SELECT * FROM usuarios WHERE id ='".$_GET['id']."'");
+    $rows = $ultimo_id->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($rows as $row) {
+
+        echo '<p style="color:red;"> Desea Eliminar el usuairo <b>'.$row['nombre'].'<p>.';
+
+    }
+
+    echo '<input type="hidden" value="'.$_GET['id'].'" name="id_eliminar">';
+
+}
+
+if (isset($_GET['reenviar_codigo'])) {  ?>
+
+    <h2>Quieres reenviar el codigo?</h2>
+    <input type="hidden" value="<?php echo $_GET['id']; ?>" name="id_reenviar">   
+  
+<?php } 
+
+if (isset($_GET['edit_reg'])) {
+
+    foreach ($rows as $row) { ?>
+
+        <label for="">Tipo de Persona</label>
+        <input type="text" value="<?php echo $row['tipo_persona']; ?>" class="form-control" name="edit_tipo_persona">
+        <label for="">Nombre completo</label>
+        <input type="text" value="<?php echo $row['nombre_completo']; ?>" class="form-control" name="edit_nombre_completo">
+        <label for="">Email</label>
+        <input type="text" value="<?php echo $row['email']; ?>" class="form-control" name="edit_email">
+        <label for="">Telefono</label>
+        <input type="text" value="<?php echo $row['telefono']; ?>" class="form-control" name="edit_telefono">
+        <input type="hidden" value="<?php echo $_GET['id']; ?>" name="id_user_edit">
+
+   <?php  }
+    
+}
+
+if (isset($_GET['aprobar_supervisor'])) {
+
+    foreach ($rows as $row) {
+
+        echo ' Se le enviara al supervisor a <b>'.$row['nombre_completo'].'</b> Se le enviara al supervisor para su revision y su posterior aprobacion.<br>
+                <h3 style="color:red;">ANTES DE APROBAR, VERIFIQUE LOS DOCUMENTOS ADJUNTOS</h3>
+                <b style="color:red;">Verifique si todos los documentos adjuntos se pueden visualizar. Si no es el caso, 
+                por favor contacte al cliente y solicítele que vuelva a subir los documentos solicitados.</b>';
+
+    }
+
+    echo '<input type="hidden" value="'.$_GET['id'].'" name="id_aprobar_supervisor">';
+
+}
+
+?>
