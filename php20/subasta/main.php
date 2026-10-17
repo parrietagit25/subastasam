@@ -4,11 +4,10 @@ $mensaje = "";
 require 'vendor/autoload.php';
 require_once 'config/mail.php';
 require_once 'config/ui_helpers.php';
+require_once 'config/auth.php';
+require_once 'config/access_code.php';
 
-if(!isset($_SESSION["email"])) {
-    header("Location: index.php");
-    exit();
-}
+require_login();
 
 try {
   require_once __DIR__ . '/config/db.php';
@@ -19,9 +18,15 @@ try {
 }
 
 if (isset($_POST['send_email'])) {
+  require_role('vendedor', 'admin');
+
+  $stmt = $pdo->prepare("SELECT email FROM cc_subastas WHERE id = ?");
+  $stmt->execute([(int) ($_POST['id_aprobar_send_email'] ?? 0)]);
+  $email_send = (string) $stmt->fetchColumn();
+  $mensaje_send = nl2br(htmlspecialchars((string) ($_POST['mensaje_send_email'] ?? '')));
 
   $result = send_email(
-      $_POST['email_send_email'],
+      $email_send,
       'GRUPO PCR - Revicion de Documentos',
       '
       <html>
@@ -30,7 +35,7 @@ if (isset($_POST['send_email'])) {
         </head>
         <body> 
           <p>Buen dia, el siguiente mensaje fue enviado por parte del personal administrativo, el mensaje enviado es:</p>
-          " - '.$_POST['mensaje_send_email'].' - "
+          " - '.$mensaje_send.' - "
         </body>
       </html>
       ',
@@ -50,17 +55,21 @@ if (isset($_POST['send_email'])) {
 }
 
   if (isset($_POST['id_aprobar'])) {
+    require_role('supervisor', 'admin');
 
-    $codigo = $_POST['id_aprobar'].rand(1, 100000);
+    $id_aprobar = (int) $_POST['id_aprobar'];
+    $codigo = generate_access_code();
 
-    $insert = $pdo -> query("UPDATE cc_subastas SET codigo = '".$codigo."', stat = 2 WHERE id = '".$_POST['id_aprobar']."'");
+    $stmt = $pdo->prepare("UPDATE cc_subastas SET codigo = ?, stat = 2 WHERE id = ?");
+    $stmt->execute([$codigo, $id_aprobar]);
     
-    $datos_user = $pdo -> query("SELECT * FROM cc_subastas WHERE id = '".$_POST['id_aprobar']."'");
+    $datos_user = $pdo->prepare("SELECT * FROM cc_subastas WHERE id = ?");
+    $datos_user->execute([$id_aprobar]);
     $rowss = $datos_user->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($rowss as $rows) {
 
-      $nombre=$rows['nombre_completo'];
+      $nombre = htmlspecialchars($rows['nombre_completo']);
       $email_destinatario = $rows['email'];
 
      }
@@ -109,7 +118,9 @@ if (isset($_POST['send_email'])) {
 
   if (isset($_POST['id_eliminar'])) {
 
-    $insert = $pdo -> query("UPDATE cc_subastas SET stat = 3 WHERE id = '".$_POST['id_eliminar']."'");
+    require_role('admin');
+    $stmt = $pdo->prepare("UPDATE cc_subastas SET stat = 3 WHERE id = ?");
+    $stmt->execute([(int) $_POST['id_eliminar']]);
 
     $mensaje = '<div class="alert alert-danger alert-dismissible fade show" role="alert">
                   <strong>Registro Eliminado!</strong>
@@ -120,7 +131,9 @@ if (isset($_POST['send_email'])) {
 
   if (isset($_POST['id_aprobar_supervisor'])) {
     # code...
-    $insert = $pdo -> query("UPDATE cc_subastas SET stat = 4 WHERE id = '".$_POST['id_aprobar_supervisor']."'");
+    require_role('vendedor', 'admin');
+    $stmt = $pdo->prepare("UPDATE cc_subastas SET stat = 4 WHERE id = ?");
+    $stmt->execute([(int) $_POST['id_aprobar_supervisor']]);
 
     $result = send_email(
         [

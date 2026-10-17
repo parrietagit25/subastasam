@@ -1,40 +1,23 @@
 <?php 
 session_start();
+require_once __DIR__ . '/subasta/config/access_code.php';
 
-if (isset($_SESSION['activacion_code']) || isset($_COOKIE["grupopcr"])) {
+if (isset($_SESSION['activacion_code']) || access_code_is_valid($_COOKIE[ACCESS_CODE_COOKIE] ?? null)) {
   header('Location: subastas.php');
+  exit();
 }
 
 if (isset($_POST['enviar_codigo'])) {
+   $codigo = (string) ($_POST['codigo_acceso'] ?? '');
 
-  try {
-    require_once __DIR__ . '/subasta/config/db.php';
-    $pdo = db_connect();
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-  } catch (PDOException $e) {
-    echo "Error de conexión: " . $e->getMessage();
-  }
-
-  $datos_user = $pdo -> query("SELECT count(*) as contar FROM cc_subastas WHERE codigo = '".$_POST['codigo_acceso']."'");
-  $rowss = $datos_user->fetchAll(PDO::FETCH_ASSOC);
-
-  foreach ($rowss as $rows) {
-
-    $contar=$rows['contar'];
-
-   }
-   
-   if (isset($contar) && $contar > 0) {
+   if (access_code_is_valid($codigo)) {
+      session_regenerate_id(true);
       $_SESSION['activacion_code'] = 1;
-
-      $cookieName = "grupopcr";
-      $cookieValue = $_POST['codigo_acceso'];
-      $expirationTime = time() + 365 * 24 * 60 * 60;
-      setcookie($cookieName, $cookieValue, $expirationTime, "/");
+      remember_access_code($codigo);
 
       header('Location: subastas.php');
+      exit();
    }
-  
 }
 
 ?>

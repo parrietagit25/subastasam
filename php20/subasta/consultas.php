@@ -1,4 +1,11 @@
 <?php 
+session_start();
+require_once __DIR__ . '/config/auth.php';
+
+if (!isset($_SESSION['email'])) {
+    http_response_code(401);
+    exit();
+}
 
 try {
     require_once __DIR__ . '/config/db.php';
@@ -8,13 +15,18 @@ try {
     echo "Error de conexión: " . $e->getMessage();
 }
 
-$ultimo_id = $pdo -> query("SELECT * FROM cc_subastas WHERE id ='".$_GET['id']."'");
+$id = (int) ($_GET['id'] ?? 0);
+
+$ultimo_id = $pdo->prepare("SELECT * FROM cc_subastas WHERE id = ?");
+$ultimo_id->execute([$id]);
 $rows = $ultimo_id->fetchAll(PDO::FETCH_ASSOC);
 
 
 if (isset($_GET['editar_usuario'])) {
+    require_role('admin');
 
-    $ultimo_id = $pdo -> query("SELECT * FROM usuarios WHERE id ='".$_GET['id']."'");
+    $ultimo_id = $pdo->prepare("SELECT * FROM usuarios WHERE id = ?");
+    $ultimo_id->execute([$id]);
     $rows = $ultimo_id->fetchAll(PDO::FETCH_ASSOC);
 
 
@@ -24,11 +36,11 @@ if (isset($_GET['editar_usuario'])) {
                   <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
                   <div class="mb-3">
                     <label for="nombre" class="form-label">Nombre</label>
-                    <input type="text" class="form-control" id="nombre" name="nombre" value="<?php echo $row['nombre']; ?>" required>
+                    <input type="text" class="form-control" id="nombre" name="nombre" value="<?php echo htmlspecialchars($row['nombre']); ?>" required>
                   </div>
                   <div class="mb-3">
                     <label for="email" class="form-label">Email</label>
-                    <input type="email" class="form-control" id="email" name="email" value="<?php echo $row['email']; ?>" required>
+                    <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($row['email']); ?>" required>
                   </div>
                   <div class="mb-3">
                     <label for="edad" class="form-label">Edad</label>
@@ -58,7 +70,7 @@ if (isset($_GET['editar_usuario'])) {
 
     <?php }
 
-    echo '<input type="hidden" value="'.$_GET['id'].'" name="id_aprobar">';
+    echo '<input type="hidden" value="'.$id.'" name="id_aprobar">';
 
 }
 
@@ -68,7 +80,7 @@ if (isset($_GET['aprobar'])) {
 
     foreach ($rows as $row) {
 
-        echo ' Desea aprobar a <b>'.$row['nombre_completo'].'</b> Se le enviara un correo a con el codigo de aprobacion.<br>
+        echo ' Desea aprobar a <b>'.htmlspecialchars($row['nombre_completo']).'</b> Se le enviara un correo a con el codigo de aprobacion.<br>
                 <h3 style="color:red;">ANTES DE APROBAR, VERIFIQUE LOS DOCUMENTOS ADJUNTOS</h3>
                 <b style="color:red;">Verifique si todos los documentos adjuntos se pueden visualizar. Si no es el caso, 
                 por favor contacte al cliente y solicítele que vuelva a subir los documentos solicitados.</b>
@@ -76,7 +88,7 @@ if (isset($_GET['aprobar'])) {
 
     }
 
-    echo '<input type="hidden" value="'.$_GET['id'].'" name="id_aprobar">';
+    echo '<input type="hidden" value="'.$id.'" name="id_aprobar">';
 
 }
 
@@ -84,14 +96,14 @@ if (isset($_GET['enviar_email'])) {
 
     foreach ($rows as $row) {
 
-        echo ' Desea Enviar un correo a <b>'.$row['nombre_completo'].'</b>.<br>
+        echo ' Desea Enviar un correo a <b>'.htmlspecialchars($row['nombre_completo']).'</b>.<br>
              <textarea name="mensaje_send_email" id="" cols="30" rows="10" class="form-control"></textarea>
         ';
 
     }
 
-    echo '<input type="hidden" value="'.$_GET['id'].'" name="id_aprobar_send_email">';
-    echo '<input type="hidden" value="'.$row['email'].'" name="email_send_email">';
+    echo '<input type="hidden" value="'.$id.'" name="id_aprobar_send_email">';
+    echo '<input type="hidden" value="'.htmlspecialchars($row['email']).'" name="email_send_email">';
 
 }
 
@@ -210,33 +222,35 @@ if (isset($_GET['eliminar'])) {
 
     foreach ($rows as $row) {
 
-        echo '<p style="color:red;"> Desea Eliminar el regsitros de <b>'.$row['nombre_completo'].'<p>.';
+        echo '<p style="color:red;"> Desea Eliminar el regsitros de <b>'.htmlspecialchars($row['nombre_completo']).'<p>.';
 
     }
 
-    echo '<input type="hidden" value="'.$_GET['id'].'" name="id_eliminar">';
+    echo '<input type="hidden" value="'.$id.'" name="id_eliminar">';
 
 }
 
 if (isset($_GET['eliminar_usuario'])) {
+    require_role('admin');
 
-    $ultimo_id = $pdo -> query("SELECT * FROM usuarios WHERE id ='".$_GET['id']."'");
+    $ultimo_id = $pdo->prepare("SELECT * FROM usuarios WHERE id = ?");
+    $ultimo_id->execute([$id]);
     $rows = $ultimo_id->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($rows as $row) {
 
-        echo '<p style="color:red;"> Desea Eliminar el usuairo <b>'.$row['nombre'].'<p>.';
+        echo '<p style="color:red;"> Desea Eliminar el usuairo <b>'.htmlspecialchars($row['nombre']).'<p>.';
 
     }
 
-    echo '<input type="hidden" value="'.$_GET['id'].'" name="id_eliminar">';
+    echo '<input type="hidden" value="'.$id.'" name="id_eliminar">';
 
 }
 
 if (isset($_GET['reenviar_codigo'])) {  ?>
 
     <h2>Quieres reenviar el codigo?</h2>
-    <input type="hidden" value="<?php echo $_GET['id']; ?>" name="id_reenviar">   
+    <input type="hidden" value="<?php echo $id; ?>" name="id_reenviar">   
   
 <?php } 
 
@@ -245,14 +259,14 @@ if (isset($_GET['edit_reg'])) {
     foreach ($rows as $row) { ?>
 
         <label for="">Tipo de Persona</label>
-        <input type="text" value="<?php echo $row['tipo_persona']; ?>" class="form-control" name="edit_tipo_persona">
+        <input type="text" value="<?php echo htmlspecialchars($row['tipo_persona']); ?>" class="form-control" name="edit_tipo_persona">
         <label for="">Nombre completo</label>
-        <input type="text" value="<?php echo $row['nombre_completo']; ?>" class="form-control" name="edit_nombre_completo">
+        <input type="text" value="<?php echo htmlspecialchars($row['nombre_completo']); ?>" class="form-control" name="edit_nombre_completo">
         <label for="">Email</label>
-        <input type="text" value="<?php echo $row['email']; ?>" class="form-control" name="edit_email">
+        <input type="text" value="<?php echo htmlspecialchars($row['email']); ?>" class="form-control" name="edit_email">
         <label for="">Telefono</label>
-        <input type="text" value="<?php echo $row['telefono']; ?>" class="form-control" name="edit_telefono">
-        <input type="hidden" value="<?php echo $_GET['id']; ?>" name="id_user_edit">
+        <input type="text" value="<?php echo htmlspecialchars($row['telefono']); ?>" class="form-control" name="edit_telefono">
+        <input type="hidden" value="<?php echo $id; ?>" name="id_user_edit">
 
    <?php  }
     
@@ -262,14 +276,14 @@ if (isset($_GET['aprobar_supervisor'])) {
 
     foreach ($rows as $row) {
 
-        echo ' Se le enviara al supervisor a <b>'.$row['nombre_completo'].'</b> Se le enviara al supervisor para su revision y su posterior aprobacion.<br>
+        echo ' Se le enviara al supervisor a <b>'.htmlspecialchars($row['nombre_completo']).'</b> Se le enviara al supervisor para su revision y su posterior aprobacion.<br>
                 <h3 style="color:red;">ANTES DE APROBAR, VERIFIQUE LOS DOCUMENTOS ADJUNTOS</h3>
                 <b style="color:red;">Verifique si todos los documentos adjuntos se pueden visualizar. Si no es el caso, 
                 por favor contacte al cliente y solicítele que vuelva a subir los documentos solicitados.</b>';
 
     }
 
-    echo '<input type="hidden" value="'.$_GET['id'].'" name="id_aprobar_supervisor">';
+    echo '<input type="hidden" value="'.$id.'" name="id_aprobar_supervisor">';
 
 }
 

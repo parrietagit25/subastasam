@@ -21,12 +21,13 @@ try {
 
   if (isset($_POST['reenviar_codigo'])) {
 
-    $datos_user = $pdo -> query("SELECT * FROM cc_subastas WHERE id = '".$_POST['id_reenviar']."'");
+    $datos_user = $pdo->prepare("SELECT * FROM cc_subastas WHERE id = ?");
+    $datos_user->execute([(int) $_POST['id_reenviar']]);
     $rowss = $datos_user->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($rowss as $rows) {
 
-      $nombre=$rows['nombre_completo'];
+      $nombre = htmlspecialchars($rows['nombre_completo']);
       $email_destinatario = $rows['email'];
       $codigo = $rows['codigo'];
 
@@ -77,12 +78,14 @@ try {
 
 if (isset($_POST['edit_user'])) {
 
-  $update_user = $pdo -> query("UPDATE cc_subastas SET tipo_persona = '".$_POST['edit_tipo_persona']."', 
-                                                        nombre_completo = '".$_POST['edit_nombre_completo']."', 
-                                                        email = '".$_POST['edit_email']."', 
-                                                        telefono = '".$_POST['edit_telefono']."' 
-                                                        WHERE 
-                                                        id = '".$_POST['id_user_edit']."' ");
+  $update_user = $pdo->prepare("UPDATE cc_subastas SET tipo_persona = ?, nombre_completo = ?, email = ?, telefono = ? WHERE id = ?");
+  $update_user->execute([
+      $_POST['edit_tipo_persona'],
+      $_POST['edit_nombre_completo'],
+      $_POST['edit_email'],
+      $_POST['edit_telefono'],
+      (int) $_POST['id_user_edit'],
+  ]);
 
   $mensaje = '<div class="alert alert-success alert-dismissible fade show" role="alert">
                 <strong>Persona Actualizada!</strong>

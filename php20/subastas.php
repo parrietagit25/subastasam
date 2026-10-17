@@ -1,13 +1,17 @@
 <?php 
 
 session_start();
-if (!isset($_COOKIE["grupopcr"])) {
+require_once __DIR__ . '/subasta/config/access_code.php';
+
+$codigoCookie = $_COOKIE[ACCESS_CODE_COOKIE] ?? null;
+if (access_code_is_valid($codigoCookie)) {
+    $_SESSION['activacion_code'] = 1;
+    remember_access_code($codigoCookie);
+} else {
+    unset($_SESSION['activacion_code']);
+    forget_access_code();
     header('Location: index.php');
-}else{
-    $cookieValue = $_COOKIE["grupopcr"];
-    $expirationTime = time() + 365 * 24 * 60 * 60;
-    setcookie("grupopcr", $cookieValue, $expirationTime, "/"); 
-    
+    exit();
 }
 ?>
 <!doctype html>

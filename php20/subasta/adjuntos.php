@@ -113,7 +113,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_subir_adjunto'])) 
                 </tr>
             </thead>
             <tbody>
-                <?php $adjuntos = $pdo -> query("SELECT * FROM cc_adjuntos_user WHERE id_user = '".$id_subir_adjunto."'");
+                <?php $adjuntos = $pdo->prepare("SELECT * FROM cc_adjuntos_user WHERE id_user = ?");
+                      $adjuntos->execute([(int) $id_subir_adjunto]);
                       foreach ($adjuntos as $row2) { ?>
                 <tr>
                     <td><strong>#<?php echo $row2['id']; ?></strong></td>

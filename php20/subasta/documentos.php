@@ -17,7 +17,9 @@ try {
 
 if (isset($_POST['nombre_pn'])) {
 
-    $insert = $pdo -> query("INSERT INTO cc_subastas(nombre_completo, email, telefono, tipo_persona, stat)VALUES('".$_POST['nombre_pn']."', '".$_POST['email_pn']."', '".$_POST['telefono_pn']."', 'NATURAL', 1)");
+    $insert = $pdo->prepare("INSERT INTO cc_subastas(nombre_completo, email, telefono, tipo_persona, stat) VALUES (?, ?, ?, 'NATURAL', 1)");
+    $insert->execute([$_POST['nombre_pn'], $_POST['email_pn'], $_POST['telefono_pn']]);
+    $id_ult = (int) $pdo->lastInsertId();
     
     $mensaje = '<div class="alert alert-success alert-dismissible fade show" role="alert">
                   <strong>Registro Realizado!</strong>
@@ -39,7 +41,7 @@ if (isset($_POST['nombre_pn'])) {
           <body> 
             <img src="cid:logosubastas" width="250" alt="Logo 1" />
             <br>
-            <p>Se ha registrado una nueva persona, <strong style="font-size: 18px;">'.$_POST['nombre_pn'].'</strong></p>
+            <p>Se ha registrado una nueva persona, <strong style="font-size: 18px;">'.htmlspecialchars($_POST['nombre_pn']).'</strong></p>
             <p>Ingrese en la zona administrativa para verificar los docuemntos <a href="https://subastas.grupopcr.com.pa/subasta/">https://subastas.grupopcr.com.pa/subasta/</a></p>
             <br>
             <img src="cid:logogrupopcr" width="250" alt="Logo 2" />
@@ -54,12 +56,6 @@ if (isset($_POST['nombre_pn'])) {
         echo "El mensaje no se pudo enviar. Error: {$result['error']}";
     }
     
-    $ultimo_id = $pdo -> query("SELECT MAX(id) as id FROM cc_subastas");
-    $rows = $ultimo_id->fetchAll(PDO::FETCH_ASSOC);
-    foreach ($rows as $row) {
-      $id_ult = $row['id'];
-    }
-
     $maxSize = 50 * 1024 * 1024; // Tamaño máximo permitido: 50 MB
     $archivos = ['recibo_pn', 'ficha_pn', 'cc_pn', 'cedula_pn'];
     $mensajeError = '';
@@ -99,7 +95,8 @@ if (isset($_POST['nombre_pn'])) {
       
                       // Solo intentamos actualizar si el campo está correctamente mapeado
                       if (!empty($campoBD)) {
-                          $update = $pdo->query("UPDATE cc_subastas SET $campoBD = '" . $target_file . "' WHERE id = '" . $id_ult . "'");
+                          $update = $pdo->prepare("UPDATE cc_subastas SET $campoBD = ? WHERE id = ?");
+                          $update->execute([$target_file, $id_ult]);
                       }
                   } else {
                       $mensaje = '<div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -117,7 +114,9 @@ if (isset($_POST['nombre_pn'])) {
 
 if (isset($_POST['nombre_completo_pni'])) {
 
-  $insert = $pdo -> query("INSERT INTO cc_subastas(nombre_completo, email, telefono, tipo_persona, stat)VALUES('".$_POST['nombre_completo_pni']."', '".$_POST['email_pni']."', '".$_POST['telefono_pni']."', 'NATURAL INDEPENDIENTE', 1)");
+  $insert = $pdo->prepare("INSERT INTO cc_subastas(nombre_completo, email, telefono, tipo_persona, stat) VALUES (?, ?, ?, 'NATURAL INDEPENDIENTE', 1)");
+  $insert->execute([$_POST['nombre_completo_pni'], $_POST['email_pni'], $_POST['telefono_pni']]);
+  $id_ult = (int) $pdo->lastInsertId();
   
   $mensaje = '<div class="alert alert-success alert-dismissible fade show" role="alert">
                 <strong>Registro Realizado!</strong>
@@ -135,7 +134,7 @@ if (isset($_POST['nombre_completo_pni'])) {
         <body> 
           <img src="cid:logosubastas" width="250" alt="Logo 1" />
           <br>
-          <p>Se ha registrado una nueva persona, <strong style="font-size: 18px;">'.$_POST['nombre_completo_pni'].'</strong></p>
+          <p>Se ha registrado una nueva persona, <strong style="font-size: 18px;">'.htmlspecialchars($_POST['nombre_completo_pni']).'</strong></p>
           <p>Ingrese en la zona administrativa para verificar los docuemntos <a href="https://subastas.grupopcr.com.pa/subasta/">https://subastas.grupopcr.com.pa/subasta/</a></p>
           <br>
           <img src="cid:logogrupopcr" width="250" alt="Logo 2" />
@@ -150,12 +149,6 @@ if (isset($_POST['nombre_completo_pni'])) {
       echo "El mensaje no se pudo enviar. Error: {$result['error']}";
   }
   
-  $ultimo_id = $pdo -> query("SELECT MAX(id) as id FROM cc_subastas");
-  $rows = $ultimo_id->fetchAll(PDO::FETCH_ASSOC);
-  foreach ($rows as $row) {
-    $id_ult = $row['id'];
-  }
-
   // recibo
 
 
@@ -200,7 +193,8 @@ if (isset($_POST['nombre_completo_pni'])) {
     
                     // Solo intentamos actualizar si el campo está correctamente mapeado
                     if (!empty($campoBD)) {
-                        $update = $pdo->query("UPDATE cc_subastas SET $campoBD = '" . $target_file . "' WHERE id = '" . $id_ult . "'");
+                        $update = $pdo->prepare("UPDATE cc_subastas SET $campoBD = ? WHERE id = ?");
+                        $update->execute([$target_file, $id_ult]);
                     }
                 } else {
                     $mensaje = '<div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -215,7 +209,9 @@ if (isset($_POST['nombre_completo_pni'])) {
 
 if (isset($_POST['nombre_completo_pj'])) {
 
-  $insert = $pdo -> query("INSERT INTO cc_subastas(nombre_completo, email, telefono, tipo_persona, stat)VALUES('".$_POST['nombre_completo_pj']."', '".$_POST['email_pj']."', '".$_POST['telefono_pj']."', 'JURIDICA', 1)");
+  $insert = $pdo->prepare("INSERT INTO cc_subastas(nombre_completo, email, telefono, tipo_persona, stat) VALUES (?, ?, ?, 'JURIDICA', 1)");
+  $insert->execute([$_POST['nombre_completo_pj'], $_POST['email_pj'], $_POST['telefono_pj']]);
+  $id_ult = (int) $pdo->lastInsertId();
   
   $mensaje = '<div class="alert alert-success alert-dismissible fade show" role="alert">
                 <strong>Registro Realizado!</strong>
@@ -237,7 +233,7 @@ if (isset($_POST['nombre_completo_pj'])) {
         <body> 
           <img src="cid:logosubastas" width="250" alt="Logo 1" />
           <br>
-          <p>Se ha registrado una nueva persona, <strong style="font-size: 18px;">'.$_POST['nombre_completo_pj'].'</strong></p>
+          <p>Se ha registrado una nueva persona, <strong style="font-size: 18px;">'.htmlspecialchars($_POST['nombre_completo_pj']).'</strong></p>
           <p>Ingrese en la zona administrativa para verificar los docuemntos <a href="https://subastas.grupopcr.com.pa/subasta/">https://subastas.grupopcr.com.pa/subasta/</a></p>
           <br>
           <img src="cid:logogrupopcr" width="250" alt="Logo 2" />
@@ -253,12 +249,6 @@ if (isset($_POST['nombre_completo_pj'])) {
   }
   
   
-  $ultimo_id = $pdo -> query("SELECT MAX(id) as id FROM cc_subastas");
-  $rows = $ultimo_id->fetchAll(PDO::FETCH_ASSOC);
-  foreach ($rows as $row) {
-    $id_ult = $row['id'];
-  }
-
   // registro publico
 
   $maxSize = 50 * 1024 * 1024; // Tamaño máximo permitido: 50 MB
@@ -301,7 +291,8 @@ if (isset($_POST['nombre_completo_pj'])) {
     
                     // Solo intentamos actualizar si el campo está correctamente mapeado
                     if (!empty($campoBD)) {
-                        $update = $pdo->query("UPDATE cc_subastas SET $campoBD = '" . $target_file . "' WHERE id = '" . $id_ult . "'");
+                        $update = $pdo->prepare("UPDATE cc_subastas SET $campoBD = ? WHERE id = ?");
+                        $update->execute([$target_file, $id_ult]);
                     }
                 } else {
                     $mensaje = '<div class="alert alert-danger alert-dismissible fade show" role="alert">

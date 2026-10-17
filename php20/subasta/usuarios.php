@@ -3,11 +3,9 @@ session_start();
 $mensaje = "";
 require 'vendor/autoload.php';
 require_once 'config/ui_helpers.php';
+require_once 'config/auth.php';
 
-if(!isset($_SESSION["email"])) {
-    header("Location: index.php");
-    exit();
-}
+require_login();
 
 try {
   require_once __DIR__ . '/config/db.php';
@@ -18,29 +16,24 @@ try {
 }
 
 if (isset($_POST['editar_usuario'])) {
+    require_role('admin');
 
-    $id = $_POST['id'];
+    $id = (int) $_POST['id'];
     $nombre = $_POST['nombre'];
     $email = $_POST['email'];
-    $edad = $_POST['edad'];
+    $edad = ($_POST['edad'] ?? '') !== '' ? (int) $_POST['edad'] : null;
     $password = !empty($_POST['password']) ? password_hash($_POST['password'], PASSWORD_DEFAULT) : null;
     $tipo_user = $_POST['tipo_user'];
-    $stat = $_POST['stat'];
+    $stat = (int) $_POST['stat'];
 
     try {
-        // Construir la consulta dinámica según si hay password o no
         if ($password) {
-            $sql = "UPDATE usuarios 
-                    SET nombre = '$nombre', email = '$email', edad = '$edad', password = '$password', tipo_user = '$tipo_user', stat = '$stat' 
-                    WHERE id = '$id'";
+            $insert = $pdo->prepare("UPDATE usuarios SET nombre = ?, email = ?, edad = ?, password = ?, tipo_user = ?, stat = ? WHERE id = ?");
+            $insert->execute([$nombre, $email, $edad, $password, $tipo_user, $stat, $id]);
         } else {
-            $sql = "UPDATE usuarios 
-                    SET nombre = '$nombre', email = '$email', edad = '$edad', tipo_user = '$tipo_user', stat = '$stat' 
-                    WHERE id = '$id'";
+            $insert = $pdo->prepare("UPDATE usuarios SET nombre = ?, email = ?, edad = ?, tipo_user = ?, stat = ? WHERE id = ?");
+            $insert->execute([$nombre, $email, $edad, $tipo_user, $stat, $id]);
         }
-
-        // Ejecutar la consulta
-        $insert = $pdo->query($sql);
 
         if ($insert) {
             $mensaje = '<div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -59,7 +52,9 @@ if (isset($_POST['editar_usuario'])) {
 
   if (isset($_POST['id_eliminar'])) {
 
-    $insert = $pdo -> query("UPDATE usuarios SET stat = 3 WHERE id = '".$_POST['id_eliminar']."'");
+    require_role('admin');
+    $stmt = $pdo->prepare("UPDATE usuarios SET stat = 3 WHERE id = ?");
+    $stmt->execute([(int) $_POST['id_eliminar']]);
 
     $mensaje = '<div class="alert alert-danger alert-dismissible fade show" role="alert">
                   <strong>Registro Eliminado!</strong>
