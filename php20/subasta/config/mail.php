@@ -16,6 +16,14 @@ function resend_from_address(): string
     return trim($_ENV['RESEND_FROM_ADDRESS'] ?? 'subastas@automarket.com.pa');
 }
 
+/** @return array<int, string> */
+function mail_bcc_default(): array
+{
+    $raw = trim($_ENV['MAIL_BCC'] ?? '', '"');
+
+    return array_values(array_filter(array_map('trim', explode(',', $raw))));
+}
+
 function mail_default_logos(): array
 {
     $imgDir = dirname(__DIR__) . '/../img';
@@ -56,13 +64,15 @@ function build_resend_attachments(array $inlineImages): array
 /**
  * @param array<int, string>|string $to
  * @param array<string, string> $inlineImages content_id => file path
+ * @param array<int, string>|null $bcc null = copia oculta a MAIL_BCC
  */
 function send_email(
     array|string $to,
     string $subject,
     string $html,
     ?string $fromName = null,
-    array $inlineImages = []
+    array $inlineImages = [],
+    ?array $bcc = null
 ): array {
     $apiKey = trim($_ENV['RESEND_API_KEY'] ?? '');
     if ($apiKey === '') {
@@ -77,6 +87,15 @@ function send_email(
         'subject' => $subject,
         'html' => $html,
     ];
+
+    $toLower = array_map('strtolower', $recipients);
+    $bcc = array_values(array_filter(
+        $bcc ?? mail_bcc_default(),
+        fn (string $address): bool => !in_array(strtolower($address), $toLower, true)
+    ));
+    if ($bcc !== []) {
+        $payload['bcc'] = $bcc;
+    }
 
     $attachments = build_resend_attachments($inlineImages);
     if ($attachments !== []) {
@@ -143,7 +162,10 @@ function send_test_email(string $to): array
     $result = send_email(
         $to,
         'Prueba Resend - Subastas PCR',
-        build_test_email_html(resend_from_address())
+        build_test_email_html(resend_from_address()),
+        null,
+        [],
+        []
     );
 
     if ($result['ok']) {

@@ -23,8 +23,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       $ultimo_id = $pdo -> query("SELECT email FROM cc_subastas group by email");
       $rows = $ultimo_id->fetchAll(PDO::FETCH_ASSOC);
 
+      $enviados = 0;
       foreach ($rows as $key => $value) {
-        $result = send_email($value['email'], $asunto, $contenido, 'Notificaciones PCR');
+        $result = send_email($value['email'], $asunto, $contenido, 'Notificaciones PCR', [], []);
+        if ($result['ok']) {
+            $enviados++;
+        }
 
         if ($result['ok']) {
             $mensaje = '<div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -37,6 +41,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                   </div>';
         }
+      }
+
+      if (mail_bcc_default() !== []) {
+        send_email(
+            mail_bcc_default(),
+            'Copia de envío masivo: ' . $asunto,
+            '<p><strong>Envío masivo a ' . $enviados . ' de ' . count($rows) . ' registrados.</strong></p><hr>' . $contenido,
+            'Notificaciones PCR',
+            [],
+            []
+        );
       }
   
     }elseif (isset($_POST['email_send']) && $_POST['email_send'] == 'ind') {
