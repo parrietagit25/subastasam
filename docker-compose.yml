@@ -1,11 +1,13 @@
 services:
   php:
-    build: .
+    # Imagen construida fuera del servidor desde docker/php83 (no se construye aquí).
+    # Rollback: SUBASTAS_PHP_IMAGE=subastaspcr-php:php8.0.30-rollback-20261022
+    image: ${SUBASTAS_PHP_IMAGE:-subastaspcr-php:8.3.36-20261022}
     volumes:
       - ./php20:/var/www/html
+    # NGINX usa localhost:8082; no publicar en todas las interfaces.
     ports:
-      - 8082:80  
-      - 4443:443  
+      - 127.0.0.1:8082:80
     restart: always
 
   db:
